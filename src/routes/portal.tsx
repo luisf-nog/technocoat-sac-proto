@@ -74,24 +74,24 @@ function PortalPage() {
             <form onSubmit={handleSubmit} className="card-elevated p-5 sm:p-8 space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <Field label="Nome completo" required>
-                  <input required type="text" placeholder="Ex: Maria Silva" className="form-input" />
+                  <input required type="text" placeholder="Ex: Maria Silva" className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30" />
                 </Field>
                 <Field label="Empresa" required>
-                  <input required type="text" placeholder="Razão social" className="form-input" />
+                  <input required type="text" placeholder="Razão social" className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30" />
                 </Field>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <Field label="E-mail" required>
-                  <input required type="email" placeholder="voce@empresa.com.br" className="form-input" />
+                  <input required type="email" placeholder="voce@empresa.com.br" className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30" />
                 </Field>
                 <Field label="Telefone" hint="Opcional">
-                  <input type="tel" placeholder="(11) 99999-0000" className="form-input" />
+                  <input type="tel" placeholder="(11) 99999-0000" className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30" />
                 </Field>
               </div>
 
               <Field label="Categoria da reclamação" required>
-                <select required className="form-input" defaultValue="">
+                <select required className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30" defaultValue="">
                   <option value="" disabled>Selecione uma categoria…</option>
                   {sectors.map((s) => <option key={s}>{s}</option>)}
                 </select>
