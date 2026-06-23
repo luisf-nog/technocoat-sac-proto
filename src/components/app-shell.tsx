@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, FilePlus2, ListChecks, Inbox, Bell, Search, ChevronDown, Menu, X, Check } from "lucide-react";
+import { LayoutDashboard, FilePlus2, ListChecks, Inbox, Bell, Search, ChevronDown, Menu, X, Check, ExternalLink, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/technocoat-logo.png.asset.json";
 import { useEffect, useRef, useState, type ReactNode } from "react";

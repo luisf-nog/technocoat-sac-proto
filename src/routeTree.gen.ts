@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ReclamacoesRouteImport } from './routes/reclamacoes'
+import { Route as PortalRouteImport } from './routes/portal'
 import { Route as NovaRouteImport } from './routes/nova'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReclamacaoIdRouteImport } from './routes/reclamacao.$id'
@@ -17,6 +18,11 @@ import { Route as ReclamacaoIdRouteImport } from './routes/reclamacao.$id'
 const ReclamacoesRoute = ReclamacoesRouteImport.update({
   id: '/reclamacoes',
   path: '/reclamacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NovaRoute = NovaRouteImport.update({
@@ -38,12 +44,14 @@ const ReclamacaoIdRoute = ReclamacaoIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/nova': typeof NovaRoute
+  '/portal': typeof PortalRoute
   '/reclamacoes': typeof ReclamacoesRoute
   '/reclamacao/$id': typeof ReclamacaoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/nova': typeof NovaRoute
+  '/portal': typeof PortalRoute
   '/reclamacoes': typeof ReclamacoesRoute
   '/reclamacao/$id': typeof ReclamacaoIdRoute
 }
@@ -51,20 +59,28 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/nova': typeof NovaRoute
+  '/portal': typeof PortalRoute
   '/reclamacoes': typeof ReclamacoesRoute
   '/reclamacao/$id': typeof ReclamacaoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/nova' | '/reclamacoes' | '/reclamacao/$id'
+  fullPaths: '/' | '/nova' | '/portal' | '/reclamacoes' | '/reclamacao/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/nova' | '/reclamacoes' | '/reclamacao/$id'
-  id: '__root__' | '/' | '/nova' | '/reclamacoes' | '/reclamacao/$id'
+  to: '/' | '/nova' | '/portal' | '/reclamacoes' | '/reclamacao/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/nova'
+    | '/portal'
+    | '/reclamacoes'
+    | '/reclamacao/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   NovaRoute: typeof NovaRoute
+  PortalRoute: typeof PortalRoute
   ReclamacoesRoute: typeof ReclamacoesRoute
   ReclamacaoIdRoute: typeof ReclamacaoIdRoute
 }
@@ -76,6 +92,13 @@ declare module '@tanstack/react-router' {
       path: '/reclamacoes'
       fullPath: '/reclamacoes'
       preLoaderRoute: typeof ReclamacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/nova': {
@@ -105,19 +128,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   NovaRoute: NovaRoute,
+  PortalRoute: PortalRoute,
   ReclamacoesRoute: ReclamacoesRoute,
   ReclamacaoIdRoute: ReclamacaoIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
