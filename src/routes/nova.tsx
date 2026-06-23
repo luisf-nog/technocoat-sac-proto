@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
-import { UploadCloud, X, FileText, Info } from "lucide-react";
+import { UploadCloud, Info } from "lucide-react";
 import { SECTORS, RESPONSIBLES } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/nova")({
@@ -81,26 +81,12 @@ function NewComplaint() {
           </Field>
 
           <Field label="Anexos" hint="PDF, JPG, PNG ou XLSX — máx. 10MB por arquivo.">
-            <div className="rounded-md border-2 border-dashed border-border bg-secondary/40 p-6 text-center hover:border-brand-navy/40 transition">
+            <label className="block rounded-md border-2 border-dashed border-border bg-secondary/40 p-6 text-center hover:border-brand-navy/40 transition cursor-pointer">
               <UploadCloud className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
               <p className="text-sm font-semibold text-foreground">Arraste arquivos ou <span className="text-brand-red">clique para enviar</span></p>
               <p className="text-xs text-muted-foreground mt-1">Notas fiscais, fotos do material, laudos técnicos</p>
-            </div>
-            <div className="mt-3 space-y-2">
-              {[
-                { name: "nf-pedido-8821.pdf", size: "412 KB" },
-                { name: "foto-embalagem.jpg", size: "1.2 MB" },
-              ].map((f) => (
-                <div key={f.name} className="flex items-center gap-3 rounded-md border border-border bg-card px-3 py-2">
-                  <FileText className="h-4 w-4 text-brand-navy" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{f.name}</p>
-                    <p className="text-xs text-muted-foreground">{f.size}</p>
-                  </div>
-                  <button type="button" className="text-muted-foreground hover:text-destructive"><X className="h-4 w-4" /></button>
-                </div>
-              ))}
-            </div>
+              <input type="file" multiple className="sr-only" />
+            </label>
           </Field>
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">

@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, FilePlus2, ListChecks, Inbox, Bell, Search, ChevronDown, Menu, X, Check, ExternalLink, Globe, Building2 } from "lucide-react";
+import { LayoutDashboard, FilePlus2, Inbox, Bell, Search, ChevronDown, Menu, X, Check, ExternalLink, Globe, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/technocoat-logo.png.asset.json";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -10,7 +10,6 @@ const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/reclamacoes", label: "Reclamações", icon: Inbox },
   { to: "/nova", label: "Nova reclamação", icon: FilePlus2 },
-  { to: "/reclamacao/SAC-2041", label: "Detalhe (exemplo)", icon: ListChecks },
 ];
 
 export function AppShell({ title, subtitle, actions, children }: { title: string; subtitle?: string; actions?: ReactNode; children: ReactNode }) {
@@ -165,7 +164,7 @@ export function AppShell({ title, subtitle, actions, children }: { title: string
               >
                 <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span className="hidden sm:inline truncate">{filial}</span>
-                <span className="sm:hidden truncate">{filial.includes("·") ? filial.split("·")[1]?.trim() : "Todas"}</span>
+                <span className="sm:hidden truncate">{filial.includes("·") ? filial.split("·")[0]?.trim() : "Todas"}</span>
                 <ChevronDown className={cn("h-3.5 w-3.5 transition-transform shrink-0", filialOpen && "rotate-180")} />
               </button>
               {filialOpen && (
