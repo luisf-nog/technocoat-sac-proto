@@ -202,7 +202,6 @@ function Field({ label, required, hint, children }: { label: string; required?: 
       </label>
       {children}
       {hint && <p className="text-xs text-muted-foreground mt-1.5">{hint}</p>}
-      <style>{`.form-input{display:block;width:100%;height:2.5rem;padding:0 .75rem;border-radius:.375rem;border:1px solid hsl(var(--input));background:hsl(var(--background));font-size:.875rem}`}</style>
     </div>
   );
 }
