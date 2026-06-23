@@ -129,16 +129,16 @@ function Dashboard() {
               to="/reclamacao/$id"
               params={{ id: c.id }}
               key={c.id}
-              className="flex items-center gap-4 px-5 py-3.5 hover:bg-secondary/50 transition-colors"
+              className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 sm:px-5 py-3.5 hover:bg-secondary/50 transition-colors"
             >
-              <span className="font-mono text-xs font-semibold text-muted-foreground w-20">{c.id}</span>
-              <div className="flex-1 min-w-0">
+              <span className="font-mono text-xs font-semibold text-muted-foreground w-20 shrink-0">{c.id}</span>
+              <div className="flex-1 min-w-0 order-3 sm:order-none basis-full sm:basis-auto">
                 <p className="text-sm font-semibold text-foreground truncate">{c.title}</p>
-                <p className="text-xs text-muted-foreground">{c.client} · {c.sector} · {c.responsible}</p>
+                <p className="text-xs text-muted-foreground truncate">{c.client} · {c.sector} · {c.responsible}</p>
               </div>
               <SeverityBadge severity={c.severity} />
               <StatusBadge status={c.status} />
-              <span className="text-xs text-muted-foreground w-20 text-right tabular-nums">{c.openDate}</span>
+              <span className="text-xs text-muted-foreground w-20 text-right tabular-nums shrink-0 hidden sm:inline">{c.openDate}</span>
             </Link>
           ))}
         </div>
