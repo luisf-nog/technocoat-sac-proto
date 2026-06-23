@@ -133,7 +133,7 @@ function hashString(s: string): number {
 export interface ClientProfile {
   name: string;
   cnpj: string;
-  nps: number;
+  satisfaction: number; // 0 a 10
   complaints: number;
 }
 
@@ -141,9 +141,9 @@ export function clientProfile(name: string): ClientProfile {
   const h = hashString(name);
   const pad = (n: number, len: number) => String(n % 10 ** len).padStart(len, "0");
   const cnpj = `${pad(h, 2)}.${pad(Math.floor(h / 100), 3)}.${pad(Math.floor(h / 9), 3)}/0001-${pad(Math.floor(h / 13), 2)}`;
-  const nps = (h % 86) - 10; // faixa -10 a 75
+  const satisfaction = Math.round(((h % 50) / 10 + 5) * 10) / 10; // faixa 5.0 a 9.9
   const complaintsCount = complaints.filter((c) => c.client === name).length;
-  return { name, cnpj, nps, complaints: complaintsCount };
+  return { name, cnpj, satisfaction, complaints: complaintsCount };
 }
 
 // ----- SLA derivado do prazo e status (referência: junho/2026) -----
@@ -166,19 +166,63 @@ export function slaInfo(c: Complaint): { label: string; cls: string } {
   return { label: `SLA vence em ${diffDays} ${diffDays === 1 ? "dia" : "dias"}`, cls: diffDays <= 2 ? "text-warning" : "text-muted-foreground" };
 }
 
-// ----- Dados auxiliares da tela de detalhe -----
+// ----- Plano de ação e timeline derivados do status da reclamação -----
 
-export const actionPlan = [
-  { step: "Auditar o lote #8821 e isolar os tubetes ovalizados", owner: "Rafael Souza", state: "done" as const },
-  { step: "Emitir crédito e reposição prioritária ao cliente", owner: "Carla Mendes", state: "approved" as const },
-  { step: "Reprogramar produção com novo ajuste da bobinadeira", owner: "Anderson Lima", state: "pending" as const },
-  { step: "Revisar parâmetro de umidade e SLA do contrato", owner: "Juliana Reis", state: "pending" as const },
-];
+export type ActionState = "done" | "approved" | "pending";
+export interface ActionStep {
+  step: string;
+  owner: string;
+  state: ActionState;
+}
 
-export const timeline = [
-  { when: "Hoje, 14:32", who: "Rafael Souza", text: "Plano de ação revisado e enviado para aprovação do gestor." },
-  { when: "Hoje, 11:08", who: "Carla Mendes", text: "Crédito e reposição de 1.200 tubetes aprovados." },
-  { when: "Ontem, 17:45", who: "Sistema", text: "SLA de resposta excedido em 12h." },
-  { when: "22/06, 09:20", who: "Juliana Reis", text: "Cliente contatado por telefone, aguarda retorno formal." },
-  { when: "20/06, 16:00", who: "Sistema", text: "Reclamação SAC-2041 aberta via Portal do Cliente." },
-];
+export function actionPlanFor(c: Complaint): ActionStep[] {
+  // Reclamação ainda aberta: não há etapas de ação definidas (aguardando triagem).
+  if (c.status === "aberta") return [];
+
+  const base: Omit<ActionStep, "state">[] = [
+    { step: `Analisar a causa raiz junto ao setor de ${c.sector}`, owner: c.responsible },
+    { step: "Definir a ação corretiva e comunicar o cliente", owner: c.responsible },
+    { step: "Executar a correção e registrar as evidências", owner: c.responsible },
+    { step: "Validar com o cliente e encerrar o chamado", owner: "Juliana Reis" },
+  ];
+
+  const states: Record<Exclude<Status, "aberta">, ActionState[]> = {
+    em_andamento: ["done", "pending", "pending", "pending"],
+    atrasada: ["done", "approved", "pending", "pending"],
+    resolvida: ["done", "done", "done", "done"],
+  };
+
+  return base.map((b, i) => ({ ...b, state: states[c.status][i] }));
+}
+
+export interface TimelineEvent {
+  when: string;
+  who: string;
+  text: string;
+}
+
+export function timelineFor(c: Complaint): TimelineEvent[] {
+  const origem = c.origin === "portal" ? "Portal do Cliente" : "registro interno";
+  const events: TimelineEvent[] = [
+    { when: c.openDate, who: "Sistema", text: `Reclamação ${c.id} aberta via ${origem}.` },
+  ];
+
+  if (c.status === "aberta") {
+    events.push({ when: c.openDate, who: "Sistema", text: "Aguardando triagem e atribuição de responsável." });
+    return events.reverse();
+  }
+
+  events.push({ when: c.openDate, who: c.responsible, text: `Chamado triado e atribuído ao setor de ${c.sector}.` });
+
+  if (c.status === "atrasada") {
+    events.push({ when: c.deadline, who: "Sistema", text: "SLA de atendimento excedido — priorização necessária." });
+    events.push({ when: "Hoje", who: c.responsible, text: "Tratamento em andamento com plano de ação revisado." });
+  } else if (c.status === "em_andamento") {
+    events.push({ when: "Hoje", who: c.responsible, text: "Plano de ação em execução, aguardando retorno do cliente." });
+  } else if (c.status === "resolvida") {
+    events.push({ when: c.deadline, who: c.responsible, text: "Ação corretiva executada e evidências registradas." });
+    events.push({ when: c.deadline, who: "Sistema", text: `Reclamação resolvida em ${c.resolutionTime}. Chamado encerrado.` });
+  }
+
+  return events.reverse();
+}

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { StatusBadge, SeverityBadge, OriginBadge } from "@/components/status-badge";
-import { complaints, actionPlan, timeline, slaInfo, clientProfile } from "@/lib/mock-data";
+import { complaints, actionPlanFor, timelineFor, slaInfo, clientProfile } from "@/lib/mock-data";
 import { ArrowLeft, Check, Clock, CircleDashed, Send, Paperclip, Calendar, User, Building2, Hash, MapPin } from "lucide-react";
 
 export const Route = createFileRoute("/reclamacao/$id")({
@@ -14,6 +14,13 @@ function Detail() {
   const c = complaints.find((x) => x.id === id) ?? complaints[0];
   const sla = slaInfo(c);
   const profile = clientProfile(c.client);
+  const plan = actionPlanFor(c);
+  const events = timelineFor(c);
+  const planDone = plan.filter((p) => p.state === "done").length;
+  const planSummary =
+    plan.length === 0
+      ? "Nenhuma etapa definida — aguardando triagem"
+      : `${plan.length} etapas · ${planDone} de ${plan.length} concluída(s)`;
 
   return (
     <AppShell
@@ -63,12 +70,18 @@ function Detail() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-base font-semibold text-foreground">Plano de ação</h2>
-                <p className="text-xs text-muted-foreground">4 etapas — 1 concluída, 1 aprovada, 2 pendentes</p>
+                <p className="text-xs text-muted-foreground">{planSummary}</p>
               </div>
               <button className="text-sm font-semibold text-brand-navy hover:text-brand-red">+ Adicionar etapa</button>
             </div>
+            {plan.length === 0 ? (
+              <div className="rounded-md border border-dashed border-border bg-secondary/30 p-6 text-center">
+                <p className="text-sm font-semibold text-foreground">Reclamação aguardando triagem</p>
+                <p className="text-xs text-muted-foreground mt-1">Nenhuma etapa de ação foi definida ainda. Atribua um responsável para iniciar o tratamento.</p>
+              </div>
+            ) : (
             <ol className="space-y-3">
-              {actionPlan.map((a, i) => {
+              {plan.map((a, i) => {
                 const meta =
                   a.state === "done"
                     ? { icon: Check, cls: "bg-success text-success-foreground", label: "Concluída", chip: "bg-success/15 text-success border-success/30" }
@@ -92,6 +105,7 @@ function Detail() {
                 );
               })}
             </ol>
+            )}
           </div>
 
           <div className="card-elevated p-6">
@@ -131,9 +145,9 @@ function Detail() {
                 <p className="text-base font-bold text-foreground">{profile.complaints}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">NPS médio</p>
-                <p className={`text-base font-bold ${profile.nps >= 0 ? "text-success" : "text-brand-red"}`}>
-                  {profile.nps >= 0 ? "+" : ""}{profile.nps}
+                <p className="text-muted-foreground">Satisfação média</p>
+                <p className={`text-base font-bold ${profile.satisfaction >= 7 ? "text-success" : profile.satisfaction >= 5 ? "text-warning" : "text-brand-red"}`}>
+                  {profile.satisfaction.toFixed(1)}<span className="text-xs font-medium text-muted-foreground"> /10</span>
                 </p>
               </div>
             </div>
@@ -145,7 +159,7 @@ function Detail() {
           <div className="card-elevated p-5">
             <h3 className="text-sm font-semibold text-foreground mb-4">Linha do tempo</h3>
             <ol className="relative border-l-2 border-border ml-2 space-y-5">
-              {timeline.map((t, i) => (
+              {events.map((t, i) => (
                 <li key={i} className="pl-5 relative">
                   <span className="absolute -left-[7px] top-1 h-3 w-3 rounded-full bg-brand-navy ring-4 ring-card" />
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
