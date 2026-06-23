@@ -75,6 +75,18 @@ export function AppShell({ title, subtitle, actions, children }: { title: string
             </Link>
           );
         })}
+
+        <p className="px-3 pt-5 pb-2 text-[10px] font-semibold tracking-[0.2em] uppercase text-sidebar-foreground/40">Externo</p>
+        <Link
+          to="/portal"
+          target="_blank"
+          rel="noreferrer"
+          className="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+        >
+          <Globe className="h-4 w-4 shrink-0" />
+          <span className="truncate flex-1">Portal do Cliente</span>
+          <ExternalLink className="h-3 w-3 opacity-60" />
+        </Link>
       </nav>
 
       <div className="px-4 py-4 border-t border-sidebar-border">
