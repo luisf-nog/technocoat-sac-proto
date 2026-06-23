@@ -122,6 +122,50 @@ export function computeSeverity(list: Complaint[]): { label: string; key: Severi
   ].map((r) => ({ ...r, val: active.filter((c) => c.severity === r.key).length }));
 }
 
+// ----- Perfil do cliente (derivado do nome, com variação estável por cliente) -----
+
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+export interface ClientProfile {
+  name: string;
+  cnpj: string;
+  nps: number;
+  complaints: number;
+}
+
+export function clientProfile(name: string): ClientProfile {
+  const h = hashString(name);
+  const pad = (n: number, len: number) => String(n % 10 ** len).padStart(len, "0");
+  const cnpj = `${pad(h, 2)}.${pad(Math.floor(h / 100), 3)}.${pad(Math.floor(h / 9), 3)}/0001-${pad(Math.floor(h / 13), 2)}`;
+  const nps = (h % 86) - 10; // faixa -10 a 75
+  const complaintsCount = complaints.filter((c) => c.client === name).length;
+  return { name, cnpj, nps, complaints: complaintsCount };
+}
+
+// ----- SLA derivado do prazo e status (referência: junho/2026) -----
+
+export const TODAY = new Date(2026, 5, 23); // 23/06/2026
+
+function parseDate(s: string): Date {
+  const [d, m, y] = s.split("/").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+export function slaInfo(c: Complaint): { label: string; cls: string } {
+  if (c.status === "resolvida") return { label: "SLA cumprido", cls: "text-success" };
+  const diffDays = Math.round((parseDate(c.deadline).getTime() - TODAY.getTime()) / 86_400_000);
+  if (diffDays < 0) {
+    const n = Math.abs(diffDays);
+    return { label: `SLA estourado há ${n} ${n === 1 ? "dia" : "dias"}`, cls: "text-brand-red" };
+  }
+  if (diffDays === 0) return { label: "SLA vence hoje", cls: "text-warning" };
+  return { label: `SLA vence em ${diffDays} ${diffDays === 1 ? "dia" : "dias"}`, cls: diffDays <= 2 ? "text-warning" : "text-muted-foreground" };
+}
+
 // ----- Dados auxiliares da tela de detalhe -----
 
 export const actionPlan = [

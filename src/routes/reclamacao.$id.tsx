@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { StatusBadge, SeverityBadge, OriginBadge } from "@/components/status-badge";
-import { complaints, actionPlan, timeline } from "@/lib/mock-data";
+import { complaints, actionPlan, timeline, slaInfo, clientProfile } from "@/lib/mock-data";
 import { ArrowLeft, Check, Clock, CircleDashed, Send, Paperclip, Calendar, User, Building2, Hash, MapPin } from "lucide-react";
 
 export const Route = createFileRoute("/reclamacao/$id")({
@@ -12,6 +12,8 @@ export const Route = createFileRoute("/reclamacao/$id")({
 function Detail() {
   const { id } = Route.useParams();
   const c = complaints.find((x) => x.id === id) ?? complaints[0];
+  const sla = slaInfo(c);
+  const profile = clientProfile(c.client);
 
   return (
     <AppShell
@@ -34,7 +36,7 @@ function Detail() {
               <StatusBadge status={c.status} />
               <SeverityBadge severity={c.severity} />
               <OriginBadge origin={c.origin} />
-              <span className="ml-auto text-xs text-muted-foreground">SLA: vence em 1 dia 4 horas</span>
+              <span className={`ml-auto text-xs font-medium ${sla.cls}`}>{sla.label}</span>
             </div>
             <h2 className="text-base font-semibold text-foreground mb-2">Descrição</h2>
             <p className="text-sm text-foreground leading-relaxed">{c.description}</p>
@@ -122,15 +124,17 @@ function Detail() {
           <div className="card-elevated p-5">
             <h3 className="text-sm font-semibold text-foreground mb-1">Cliente</h3>
             <p className="text-base font-bold text-foreground">{c.client}</p>
-            <p className="text-xs text-muted-foreground">CNPJ 12.345.678/0001-90</p>
+            <p className="text-xs text-muted-foreground">CNPJ {profile.cnpj}</p>
             <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
               <div>
                 <p className="text-muted-foreground">Reclamações</p>
-                <p className="text-base font-bold text-foreground">7</p>
+                <p className="text-base font-bold text-foreground">{profile.complaints}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">NPS médio</p>
-                <p className="text-base font-bold text-success">+42</p>
+                <p className={`text-base font-bold ${profile.nps >= 0 ? "text-success" : "text-brand-red"}`}>
+                  {profile.nps >= 0 ? "+" : ""}{profile.nps}
+                </p>
               </div>
             </div>
             <button className="mt-4 w-full h-9 rounded-md border border-border bg-card text-sm font-semibold hover:bg-secondary">

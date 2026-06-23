@@ -52,7 +52,7 @@ function Dashboard() {
       }
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <KpiCard label="Reclamações abertas" value={String(kpis.open)} hint="em tratamento" icon={Inbox} tone="navy" />
+        <KpiCard label="Reclamações ativas" value={String(kpis.open)} hint="abertas + em tratamento" icon={Inbox} tone="navy" />
         <KpiCard label="Resolvidas (mês)" value={String(kpis.resolved)} hint="junho/2026" icon={CheckCircle2} tone="green" />
         <KpiCard label="Tempo médio de resolução" value={kpis.avgResolutionDays ? `${kpis.avgResolutionDays}d` : "—"} hint="meta: 3d" icon={Clock} tone="amber" />
         <KpiCard label="Atrasadas / SLA estourado" value={String(kpis.overdue)} hint="ação imediata" icon={AlertTriangle} tone="red" />
