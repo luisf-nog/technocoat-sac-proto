@@ -1,18 +1,45 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { StatusBadge, SeverityBadge } from "@/components/status-badge";
-import { complaints } from "@/lib/mock-data";
-import { Download, Filter, Plus, Search } from "lucide-react";
+import { complaints, type Status } from "@/lib/mock-data";
+import { Download, Filter, Plus, Search, X } from "lucide-react";
+import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/reclamacoes")({
   head: () => ({ meta: [{ title: "Reclamações — Technocoat SAC" }] }),
   component: List,
 });
 
-const statusFilters = ["Todas", "Abertas", "Em andamento", "Atrasadas", "Resolvidas"];
+const statusFilters: { label: string; value: "todas" | Status }[] = [
+  { label: "Todas", value: "todas" },
+  { label: "Abertas", value: "aberta" },
+  { label: "Em andamento", value: "em_andamento" },
+  { label: "Atrasadas", value: "atrasada" },
+  { label: "Resolvidas", value: "resolvida" },
+];
 const sectorFilters = ["Todos os setores", "Comercial", "Logística", "Financeiro", "Operações"];
 
 function List() {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<(typeof statusFilters)[number]["value"]>("todas");
+  const [sector, setSector] = useState(sectorFilters[0]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return complaints.filter((c) => {
+      if (status !== "todas" && c.status !== status) return false;
+      if (sector !== sectorFilters[0] && c.sector !== sector) return false;
+      if (q && ![c.id, c.title, c.client, c.responsible].some((f) => f.toLowerCase().includes(q))) return false;
+      return true;
+    });
+  }, [query, status, sector]);
+
+  const activeChips: { label: string; clear: () => void }[] = [];
+  if (status !== "todas") activeChips.push({ label: `Status: ${statusFilters.find((s) => s.value === status)?.label}`, clear: () => setStatus("todas") });
+  if (sector !== sectorFilters[0]) activeChips.push({ label: `Setor: ${sector}`, clear: () => setSector(sectorFilters[0]) });
+  if (query) activeChips.push({ label: `Busca: ${query}`, clear: () => setQuery("") });
+
   return (
     <AppShell
       title="Reclamações"
@@ -20,7 +47,7 @@ function List() {
       actions={
         <>
           <button className="inline-flex items-center gap-2 h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-secondary">
-            <Download className="h-4 w-4" /> Exportar
+            <Download className="h-4 w-4" /> <span className="hidden sm:inline">Exportar</span>
           </button>
           <Link to="/nova" className="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-brand-red text-brand-red-foreground font-semibold text-sm hover:opacity-90 shadow-sm">
             <Plus className="h-4 w-4" /> Nova
@@ -30,35 +57,78 @@ function List() {
     >
       <div className="card-elevated p-4 mb-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[220px]">
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por ID, título ou cliente…"
               className="w-full h-9 pl-9 pr-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
             />
           </div>
-          <select className="h-9 px-3 rounded-md border border-input bg-background text-sm font-medium">
-            {statusFilters.map((s) => <option key={s}>{s}</option>)}
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as typeof status)}
+            className="h-9 px-3 rounded-md border border-input bg-background text-sm font-medium"
+          >
+            {statusFilters.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
           </select>
-          <select className="h-9 px-3 rounded-md border border-input bg-background text-sm font-medium">
-            {sectorFilters.map((s) => <option key={s}>{s}</option>)}
+          <select
+            value={sector}
+            onChange={(e) => setSector(e.target.value)}
+            className="h-9 px-3 rounded-md border border-input bg-background text-sm font-medium"
+          >
+            {sectorFilters.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
           <button className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-secondary inline-flex items-center gap-2">
-            <Filter className="h-4 w-4" /> Mais filtros
+            <Filter className="h-4 w-4" /> <span className="hidden sm:inline">Mais filtros</span>
           </button>
         </div>
-        <div className="flex flex-wrap gap-2 mt-3">
-          {["Status: Em andamento", "Setor: Logística", "Severidade: Alta"].map((chip) => (
-            <span key={chip} className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-              {chip}
-              <button className="text-muted-foreground hover:text-foreground">×</button>
-            </span>
-          ))}
-        </div>
+        {activeChips.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {activeChips.map((chip) => (
+              <span key={chip.label} className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
+                {chip.label}
+                <button onClick={chip.clear} className="text-muted-foreground hover:text-foreground" aria-label={`Remover ${chip.label}`}>
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="card-elevated overflow-hidden">
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-3">
+        {filtered.map((c) => (
+          <Link
+            key={c.id}
+            to="/reclamacao/$id"
+            params={{ id: c.id }}
+            className="card-elevated p-4 block hover:bg-secondary/40 transition"
+          >
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="font-mono text-xs font-semibold text-brand-navy">{c.id}</span>
+              <SeverityBadge severity={c.severity} />
+            </div>
+            <p className="text-sm font-semibold text-foreground">{c.title}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{c.client} · {c.sector}</p>
+            <div className="flex items-center justify-between gap-2 mt-3">
+              <StatusBadge status={c.status} />
+              <span className="text-xs text-muted-foreground tabular-nums">{c.openDate}</span>
+            </div>
+          </Link>
+        ))}
+        {filtered.length === 0 && (
+          <div className="card-elevated p-8 text-center text-sm text-muted-foreground">Nenhuma reclamação encontrada.</div>
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="card-elevated overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -75,10 +145,19 @@ function List() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {complaints.map((c) => (
-                <tr key={c.id} className="hover:bg-secondary/40 transition-colors">
+              {filtered.map((c) => (
+                <tr
+                  key={c.id}
+                  onClick={() => navigate({ to: "/reclamacao/$id", params: { id: c.id } })}
+                  className="hover:bg-secondary/40 transition-colors cursor-pointer"
+                >
                   <td className="px-4 py-3">
-                    <Link to="/reclamacao/$id" params={{ id: c.id }} className="font-mono text-xs font-semibold text-brand-navy hover:text-brand-red">
+                    <Link
+                      to="/reclamacao/$id"
+                      params={{ id: c.id }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="font-mono text-xs font-semibold text-brand-navy hover:text-brand-red"
+                    >
                       {c.id}
                     </Link>
                   </td>
@@ -95,11 +174,18 @@ function List() {
                   <td className="px-4 py-3 text-muted-foreground tabular-nums">{c.resolutionTime}</td>
                 </tr>
               ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    Nenhuma reclamação encontrada com os filtros aplicados.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
         <div className="flex items-center justify-between px-4 py-3 border-t border-border text-xs text-muted-foreground">
-          <span>Exibindo 1–{complaints.length} de 100 reclamações</span>
+          <span>Exibindo {filtered.length} de {complaints.length} reclamações</span>
           <div className="flex items-center gap-1">
             <button className="h-7 px-2 rounded border border-border bg-card hover:bg-secondary">Anterior</button>
             <button className="h-7 w-7 rounded bg-brand-navy text-brand-navy-foreground font-semibold">1</button>
