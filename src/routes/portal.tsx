@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { UploadCloud, CheckCircle2, Mail, ShieldCheck, Clock } from "lucide-react";
 import logo from "@/assets/technocoat-logo.png.asset.json";
+import { SECTORS } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/portal")({
   head: () => ({
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/portal")({
   component: PortalPage,
 });
 
-const sectors = ["Comercial", "Logística", "Financeiro", "Operações"];
+const sectors = SECTORS;
 const severities = [
   { v: "baixa", label: "Baixa", desc: "Sem impacto operacional" },
   { v: "media", label: "Média", desc: "Impacto moderado" },
@@ -43,7 +44,7 @@ function PortalPage() {
     <div className="min-h-screen bg-gradient-to-b from-secondary/40 via-background to-background">
       <header className="border-b border-border bg-card">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-5 flex items-center justify-between">
-          <div className="bg-brand-navy rounded-md px-3 py-2 flex items-center">
+          <div className="bg-white rounded-md px-3 py-2 flex items-center border border-border shadow-sm">
             <img src={logo.url} alt="Technocoat Group" className="h-7 w-auto" />
           </div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

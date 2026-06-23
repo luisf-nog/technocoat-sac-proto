@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
-import { StatusBadge, SeverityBadge } from "@/components/status-badge";
-import { complaints, kpis, sectorBars } from "@/lib/mock-data";
+import { StatusBadge, SeverityBadge, OriginBadge } from "@/components/status-badge";
+import { complaints, filterByFilial, computeKpis, computeSectorBars, computeSeverity } from "@/lib/mock-data";
+import { useAppFilters } from "@/lib/app-filters";
 import { ArrowUpRight, Clock, CheckCircle2, AlertTriangle, Inbox, Plus } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 
@@ -32,11 +33,18 @@ function KpiCard({ label, value, hint, icon: Icon, tone }: { label: string; valu
 }
 
 function Dashboard() {
-  const recent = complaints.slice(0, 6);
+  const { filial } = useAppFilters();
+  const list = filterByFilial(complaints, filial);
+  const kpis = computeKpis(list);
+  const sectorBars = computeSectorBars(list);
+  const severity = computeSeverity(list);
+  const severityMax = Math.max(1, ...severity.map((s) => s.val));
+  const recent = list.slice(0, 6);
+  const filialLabel = filial === "Todas as unidades" ? "todas as unidades" : filial;
   return (
     <AppShell
       title="Dashboard"
-      subtitle="Visão geral do atendimento — junho/2026"
+      subtitle={`Visão geral do atendimento — ${filialLabel} · junho/2026`}
       actions={
         <Link to="/nova" className="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-brand-red text-brand-red-foreground font-semibold text-sm hover:opacity-90 shadow-sm">
           <Plus className="h-4 w-4" /> Nova reclamação
@@ -44,9 +52,9 @@ function Dashboard() {
       }
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <KpiCard label="Reclamações abertas" value={String(kpis.open)} hint="+3 essa semana" icon={Inbox} tone="navy" />
-        <KpiCard label="Resolvidas (mês)" value={String(kpis.resolved)} hint="86% no prazo" icon={CheckCircle2} tone="green" />
-        <KpiCard label="Tempo médio de resolução" value={`${kpis.avgResolutionDays}d`} hint="meta: 3d" icon={Clock} tone="amber" />
+        <KpiCard label="Reclamações abertas" value={String(kpis.open)} hint="em tratamento" icon={Inbox} tone="navy" />
+        <KpiCard label="Resolvidas (mês)" value={String(kpis.resolved)} hint="junho/2026" icon={CheckCircle2} tone="green" />
+        <KpiCard label="Tempo médio de resolução" value={kpis.avgResolutionDays ? `${kpis.avgResolutionDays}d` : "—"} hint="meta: 3d" icon={Clock} tone="amber" />
         <KpiCard label="Atrasadas / SLA estourado" value={String(kpis.overdue)} hint="ação imediata" icon={AlertTriangle} tone="red" />
       </div>
 
@@ -84,32 +92,31 @@ function Dashboard() {
           <h2 className="text-base font-semibold text-foreground">Distribuição de severidade</h2>
           <p className="text-xs text-muted-foreground mb-4">Reclamações ativas</p>
           <ul className="space-y-3">
-            {[
-              { label: "Crítica", val: 4, max: 14, cls: "bg-brand-red" },
-              { label: "Alta", val: 5, max: 14, cls: "bg-warning" },
-              { label: "Média", val: 3, max: 14, cls: "bg-brand-navy" },
-              { label: "Baixa", val: 2, max: 14, cls: "bg-success" },
-            ].map((r) => (
+            {severity.map((r) => (
               <li key={r.label}>
                 <div className="flex justify-between text-xs font-medium mb-1.5">
                   <span className="text-foreground">{r.label}</span>
                   <span className="text-muted-foreground">{r.val}</span>
                 </div>
                 <div className="h-2 rounded-full bg-secondary overflow-hidden">
-                  <div className={`h-full rounded-full ${r.cls}`} style={{ width: `${(r.val / r.max) * 100}%` }} />
+                  <div className={`h-full rounded-full ${r.cls}`} style={{ width: `${(r.val / severityMax) * 100}%` }} />
                 </div>
               </li>
             ))}
           </ul>
-          <div className="mt-6 p-4 rounded-md bg-accent border border-destructive/20">
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-brand-red mt-0.5" />
-              <div>
-                <p className="text-sm font-semibold text-brand-red">5 reclamações com SLA estourado</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Requerem priorização imediata da equipe.</p>
+          {kpis.overdue > 0 && (
+            <div className="mt-6 p-4 rounded-md bg-accent border border-destructive/20">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-brand-red mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-brand-red">
+                    {kpis.overdue} {kpis.overdue === 1 ? "reclamação com SLA estourado" : "reclamações com SLA estourado"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Requerem priorização imediata da equipe.</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -136,11 +143,15 @@ function Dashboard() {
                 <p className="text-sm font-semibold text-foreground truncate">{c.title}</p>
                 <p className="text-xs text-muted-foreground truncate">{c.client} · {c.sector} · {c.responsible}</p>
               </div>
+              <OriginBadge origin={c.origin} className="hidden lg:inline-flex" />
               <SeverityBadge severity={c.severity} />
               <StatusBadge status={c.status} />
               <span className="text-xs text-muted-foreground w-20 text-right tabular-nums shrink-0 hidden sm:inline">{c.openDate}</span>
             </Link>
           ))}
+          {recent.length === 0 && (
+            <p className="px-5 py-10 text-center text-sm text-muted-foreground">Nenhuma reclamação para esta unidade.</p>
+          )}
         </div>
       </div>
     </AppShell>

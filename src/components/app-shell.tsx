@@ -1,8 +1,10 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, FilePlus2, ListChecks, Inbox, Bell, Search, ChevronDown, Menu, X, Check, ExternalLink, Globe } from "lucide-react";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { LayoutDashboard, FilePlus2, ListChecks, Inbox, Bell, Search, ChevronDown, Menu, X, Check, ExternalLink, Globe, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/technocoat-logo.png.asset.json";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useAppFilters } from "@/lib/app-filters";
+import { FILIAIS } from "@/lib/mock-data";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -11,12 +13,11 @@ const nav = [
   { to: "/reclamacao/SAC-2041", label: "Detalhe (exemplo)", icon: ListChecks },
 ];
 
-const filiais = ["Matriz · SP", "Filial · RJ", "Filial · MG", "Filial · PR", "Filial · BA"];
-
 export function AppShell({ title, subtitle, actions, children }: { title: string; subtitle?: string; actions?: ReactNode; children: ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const navigate = useNavigate();
+  const { filial, setFilial, search, setSearch } = useAppFilters();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [filial, setFilial] = useState(filiais[0]);
   const [filialOpen, setFilialOpen] = useState(false);
   const filialRef = useRef<HTMLDivElement>(null);
 
@@ -136,7 +137,12 @@ export function AppShell({ title, subtitle, actions, children }: { title: string
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="search"
-                placeholder="Buscar reclamação, cliente…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && pathname !== "/reclamacoes") navigate({ to: "/reclamacoes" });
+                }}
+                placeholder="Buscar por ID, título ou cliente…"
                 className="w-full h-9 pl-9 pr-3 rounded-md border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
               />
             </div>
@@ -152,20 +158,22 @@ export function AppShell({ title, subtitle, actions, children }: { title: string
               <button
                 type="button"
                 onClick={() => setFilialOpen((v) => !v)}
-                className="h-9 px-3 rounded-md border border-border bg-card hover:bg-secondary flex items-center gap-2 text-sm font-medium"
+                className="h-9 px-3 rounded-md border border-border bg-card hover:bg-secondary flex items-center gap-2 text-sm font-medium max-w-[12rem]"
                 aria-haspopup="listbox"
                 aria-expanded={filialOpen}
+                title={filial}
               >
-                <span className="hidden sm:inline">{filial}</span>
-                <span className="sm:hidden">{filial.split("·")[1]?.trim() ?? filial}</span>
-                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", filialOpen && "rotate-180")} />
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="hidden sm:inline truncate">{filial}</span>
+                <span className="sm:hidden truncate">{filial.includes("·") ? filial.split("·")[1]?.trim() : "Todas"}</span>
+                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform shrink-0", filialOpen && "rotate-180")} />
               </button>
               {filialOpen && (
                 <ul
                   role="listbox"
-                  className="absolute right-0 mt-1 w-48 rounded-md border border-border bg-popover shadow-lg z-30 py-1"
+                  className="absolute right-0 mt-1 w-56 rounded-md border border-border bg-popover shadow-lg z-30 py-1"
                 >
-                  {filiais.map((f) => (
+                  {FILIAIS.map((f) => (
                     <li key={f}>
                       <button
                         type="button"

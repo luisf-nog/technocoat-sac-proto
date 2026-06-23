@@ -1,14 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { UploadCloud, X, FileText, Info } from "lucide-react";
+import { SECTORS, RESPONSIBLES } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/nova")({
   head: () => ({ meta: [{ title: "Nova reclamação — Technocoat SAC" }] }),
   component: NewComplaint,
 });
 
-const sectors = ["Comercial", "Logística", "Financeiro", "Operações"];
-const responsibles = ["Marcos Andrade", "Carla Mendes", "Rafael Souza", "Juliana Reis"];
+const sectors = SECTORS;
+const responsibles = RESPONSIBLES;
 const severities = [
   { v: "baixa", label: "Baixa", cls: "border-border" },
   { v: "media", label: "Média", cls: "border-warning text-warning" },
@@ -36,7 +37,7 @@ function NewComplaint() {
           <Field label="Título da reclamação" required>
             <input
               type="text"
-              placeholder="Ex: Atraso na entrega de tinta epóxi lote #8821"
+              placeholder="Ex: Tubetes com ovalização no lote #8821"
               className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
             />
           </Field>

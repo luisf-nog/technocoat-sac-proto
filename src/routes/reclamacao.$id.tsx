@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
-import { StatusBadge, SeverityBadge } from "@/components/status-badge";
+import { StatusBadge, SeverityBadge, OriginBadge } from "@/components/status-badge";
 import { complaints, actionPlan, timeline } from "@/lib/mock-data";
-import { ArrowLeft, Check, Clock, CircleDashed, Send, Paperclip, Calendar, User, Building2, Hash } from "lucide-react";
+import { ArrowLeft, Check, Clock, CircleDashed, Send, Paperclip, Calendar, User, Building2, Hash, MapPin } from "lucide-react";
 
 export const Route = createFileRoute("/reclamacao/$id")({
   head: ({ params }) => ({ meta: [{ title: `${params.id} — Technocoat SAC` }] }),
@@ -33,16 +33,18 @@ function Detail() {
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <StatusBadge status={c.status} />
               <SeverityBadge severity={c.severity} />
+              <OriginBadge origin={c.origin} />
               <span className="ml-auto text-xs text-muted-foreground">SLA: vence em 1 dia 4 horas</span>
             </div>
             <h2 className="text-base font-semibold text-foreground mb-2">Descrição</h2>
             <p className="text-sm text-foreground leading-relaxed">{c.description}</p>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-5 border-t border-border">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-6 pt-5 border-t border-border">
               {[
                 { icon: Hash, l: "ID", v: c.id },
                 { icon: Building2, l: "Setor", v: c.sector },
                 { icon: User, l: "Responsável", v: c.responsible },
+                { icon: MapPin, l: "Unidade", v: c.filial },
                 { icon: Calendar, l: "Abertura", v: c.openDate },
               ].map((f) => (
                 <div key={f.l}>

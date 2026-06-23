@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
-import { StatusBadge, SeverityBadge } from "@/components/status-badge";
-import { complaints, type Status } from "@/lib/mock-data";
-import { Download, Filter, Plus, Search, X } from "lucide-react";
+import { StatusBadge, SeverityBadge, OriginBadge } from "@/components/status-badge";
+import { complaints, filterByFilial, SECTORS, type Status, type Origin } from "@/lib/mock-data";
+import { useAppFilters } from "@/lib/app-filters";
+import { Download, Plus, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/reclamacoes")({
@@ -17,33 +18,43 @@ const statusFilters: { label: string; value: "todas" | Status }[] = [
   { label: "Atrasadas", value: "atrasada" },
   { label: "Resolvidas", value: "resolvida" },
 ];
-const sectorFilters = ["Todos os setores", "Comercial", "Logística", "Financeiro", "Operações"];
+const sectorFilters = ["Todos os setores", ...SECTORS];
+const originFilters: { label: string; value: "todas" | Origin }[] = [
+  { label: "Todas as origens", value: "todas" },
+  { label: "Portal do Cliente", value: "portal" },
+  { label: "Interno", value: "interno" },
+];
 
 function List() {
   const navigate = useNavigate();
-  const [query, setQuery] = useState("");
+  const { filial, search, setSearch } = useAppFilters();
   const [status, setStatus] = useState<(typeof statusFilters)[number]["value"]>("todas");
   const [sector, setSector] = useState(sectorFilters[0]);
+  const [origin, setOrigin] = useState<(typeof originFilters)[number]["value"]>("todas");
+
+  const base = useMemo(() => filterByFilial(complaints, filial), [filial]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return complaints.filter((c) => {
+    const q = search.trim().toLowerCase();
+    return base.filter((c) => {
       if (status !== "todas" && c.status !== status) return false;
       if (sector !== sectorFilters[0] && c.sector !== sector) return false;
+      if (origin !== "todas" && c.origin !== origin) return false;
       if (q && ![c.id, c.title, c.client, c.responsible].some((f) => f.toLowerCase().includes(q))) return false;
       return true;
     });
-  }, [query, status, sector]);
+  }, [base, search, status, sector, origin]);
 
   const activeChips: { label: string; clear: () => void }[] = [];
   if (status !== "todas") activeChips.push({ label: `Status: ${statusFilters.find((s) => s.value === status)?.label}`, clear: () => setStatus("todas") });
   if (sector !== sectorFilters[0]) activeChips.push({ label: `Setor: ${sector}`, clear: () => setSector(sectorFilters[0]) });
-  if (query) activeChips.push({ label: `Busca: ${query}`, clear: () => setQuery("") });
+  if (origin !== "todas") activeChips.push({ label: `Origem: ${originFilters.find((o) => o.value === origin)?.label}`, clear: () => setOrigin("todas") });
+  if (search) activeChips.push({ label: `Busca: ${search}`, clear: () => setSearch("") });
 
   return (
     <AppShell
       title="Reclamações"
-      subtitle="Gerencie e acompanhe todas as ocorrências registradas"
+      subtitle={filial === "Todas as unidades" ? "Todas as unidades · ocorrências consolidadas" : `${filial} · ocorrências da unidade`}
       actions={
         <>
           <button className="inline-flex items-center gap-2 h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-secondary">
@@ -61,8 +72,8 @@ function List() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por ID, título ou cliente…"
               className="w-full h-9 pl-9 pr-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
             />
@@ -83,9 +94,13 @@ function List() {
           >
             {sectorFilters.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
-          <button className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-secondary inline-flex items-center gap-2">
-            <Filter className="h-4 w-4" /> <span className="hidden sm:inline">Mais filtros</span>
-          </button>
+          <select
+            value={origin}
+            onChange={(e) => setOrigin(e.target.value as typeof origin)}
+            className="h-9 px-3 rounded-md border border-input bg-background text-sm font-medium"
+          >
+            {originFilters.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
         </div>
         {activeChips.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
@@ -116,6 +131,10 @@ function List() {
             </div>
             <p className="text-sm font-semibold text-foreground">{c.title}</p>
             <p className="text-xs text-muted-foreground mt-0.5">{c.client} · {c.sector}</p>
+            <div className="flex items-center gap-2 mt-2">
+              <OriginBadge origin={c.origin} />
+              <span className="text-[11px] text-muted-foreground truncate">{c.filial}</span>
+            </div>
             <div className="flex items-center justify-between gap-2 mt-3">
               <StatusBadge status={c.status} />
               <span className="text-xs text-muted-foreground tabular-nums">{c.openDate}</span>
@@ -139,6 +158,7 @@ function List() {
                 <th className="text-left font-semibold px-4 py-3">Responsável</th>
                 <th className="text-left font-semibold px-4 py-3">Severidade</th>
                 <th className="text-left font-semibold px-4 py-3">Status</th>
+                <th className="text-left font-semibold px-4 py-3">Origem</th>
                 <th className="text-left font-semibold px-4 py-3">Abertura</th>
                 <th className="text-left font-semibold px-4 py-3">Prazo</th>
                 <th className="text-left font-semibold px-4 py-3">Resolução</th>
@@ -169,6 +189,7 @@ function List() {
                   <td className="px-4 py-3 text-foreground">{c.responsible}</td>
                   <td className="px-4 py-3"><SeverityBadge severity={c.severity} /></td>
                   <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
+                  <td className="px-4 py-3"><OriginBadge origin={c.origin} /></td>
                   <td className="px-4 py-3 text-muted-foreground tabular-nums">{c.openDate}</td>
                   <td className="px-4 py-3 text-muted-foreground tabular-nums">{c.deadline}</td>
                   <td className="px-4 py-3 text-muted-foreground tabular-nums">{c.resolutionTime}</td>
@@ -176,7 +197,7 @@ function List() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                  <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
                     Nenhuma reclamação encontrada com os filtros aplicados.
                   </td>
                 </tr>
@@ -185,7 +206,7 @@ function List() {
           </table>
         </div>
         <div className="flex items-center justify-between px-4 py-3 border-t border-border text-xs text-muted-foreground">
-          <span>Exibindo {filtered.length} de {complaints.length} reclamações</span>
+          <span>Exibindo {filtered.length} de {base.length} reclamações</span>
           <div className="flex items-center gap-1">
             <button className="h-7 px-2 rounded border border-border bg-card hover:bg-secondary">Anterior</button>
             <button className="h-7 w-7 rounded bg-brand-navy text-brand-navy-foreground font-semibold">1</button>
